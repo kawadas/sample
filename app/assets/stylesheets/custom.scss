@@ -246,6 +246,21 @@ input {
   }
 }
 
+.search_form {
+  overflow: auto;
+  margin: 10px;
+  float: right;
+  .input-group {
+    width: 300px;
+    .form-control {
+      width: 250px;
+    }
+    .btn {
+      width: 50px;
+    }
+  }
+}
+
 /* microposts */
 
 .microposts {
@@ -291,4 +306,25 @@ span.picture {
   input {
     border: 0;
   }
+}
+
+section.message_box {
+  padding: 10px;
+  border: 1px solid $gray-light;
+  overflow: scroll;
+  #messages {
+    height: 400px;
+  }
+}
+
+div.message_form {
+  padding-top: 10px;
+}
+
+#message_sender {
+  font-size: 1.1em;
+}
+
+#message_content {
+  font-size: 1.0em;
 }

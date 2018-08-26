@@ -3,12 +3,22 @@ class UsersController < ApplicationController
    before_action :correct_user,   only: [:edit, :update]
    before_action :admin_user,     only: :destroy
   def index
-    @users = User.paginate(page: params[:page])
+    if params[:q] && params[:q].reject { |key, value| value.blank? }.present?
+      @q = User.ransack(search_params, activated_true: true)
+      @title = "Search Result"
+    else
+      @q = User.ransack(activated_true: true)
+      @title = "All users"
+    end
+    @users = @q.result.paginate(page: params[:page])
   end
    
   def show
     @user = User.find(params[:id])
     @microposts = @user.microposts.paginate(page: params[:page])
+    
+    @room_id = message_room_id(current_user, @user)
+    @messages = Message.recent_in_room(@room_id)
   end
   
   def new
@@ -60,7 +70,21 @@ class UsersController < ApplicationController
     render 'show_follow'
   end
   
+  def message_room_id(first_user, second_user)
+    first_id = first_user.id.to_i
+    second_id = second_user.id.to_i
+    if first_id < second_id
+      "#{first_user.id}-#{second_user.id}"
+    else
+        "#{second_user.id}-#{first_user.id}"
+    end
+  end
+  
  private
+ 
+    def search_params
+      params.require(:q).permit(:name_cont)
+    end
 
     def user_params
       params.require(:user).permit(:name, :email, :password,
