@@ -25,6 +25,20 @@
     
     <input type="file" accept="image/*">
     <form action="https://arcane-wildwood-38267.herokuapp.com/" method="post" enctype="multipart/form-data">
+      
+      <!-- カメラの準備 -->
+      <video id="camera" width="720px" autoplay></video>
+      <!-- 記録用canvas -->
+      <canvas id="canvas"></canvas>
+      <!-- 記録用img -->
+      <img id="img">
+      <!-- 撮影トリガー 1-->
+      <a id="rec" href="#">TAKE PICTURE</a>
+      <!-- 撮影トリガー 2-->
+      <input type="button" value="REC" onclick="take_picture()">
+      
+      
+
 
     
   </div>
