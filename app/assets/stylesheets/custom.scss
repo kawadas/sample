@@ -328,3 +328,46 @@ div.message_form {
 #message_content {
   font-size: 1.0em;
 }
+
+/* about */
+
+#wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+#input {
+    margin: 0 auto 20px;
+}
+#out {
+    white-space: nowrap;
+    text-align: center;
+}
+#out::after {
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: 100%;
+    vertical-align: middle;
+}
+#out img {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 100%;
+}
+#download {
+    display: none;
+    border: solid 1px #ccc;
+    background: #eee;
+    padding: 1em 2em;
+    text-align: center;
+    color: #000;
+    text-decoration: none;
+    margin: 20px auto 0;
+}
+#download.on {
+    display: block;
+}
+#canvas {
+    display: none;
+}

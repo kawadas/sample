@@ -1,99 +1,208 @@
 <!DOCTYPE html>
-  <% provide(:title, "About") %>
+<html lang="ja">
   
-  
-  <div class="upload">
-    <input type="file" name="file" id="file">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.18.1/build/cssreset/cssreset-min.css"></link>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="exif.js"></script>
+<link rel="stylesheet" href="style.css">
+<title>Collage</title>
+</head>
+
+<body>
+<div id="wrap">
+  <div id="input">
+    <input type="file" name="" id="file" accept="image/*">
   </div>
-  
+  <div id="out">
+    <img src="" alt="" id="result">
+  </div>
+  <a href="#" target="_blank" download="image.png" id="download">保存</a>
   <canvas id="canvas"></canvas>
-  
-  <div id="result"></div>
-  
-<script type="text/javascript">
-　var file = document.getElementById('file');
-var canvas = document.getElementById('canvas');
-var canvasWidth = 400;
-var canvasHeight = 300;
-var uploadImgSrc;
+</div>
+<script>
+  $(function() {
+    var result = $('#result'),
+        canvas = $('#canvas')[0]
+        ctx = canvas.getContext('2d'),
+        download = $('#download'),
+        size = 1080,
+        src = ['frame.png'],
+        exif_orientation = 1,
+        direction = 0,
+        ua = window.navigator.userAgent.toLowerCase(),
+        is_ie = false;
 
-// Canvasの準備
-canvas.width = canvasWidth;
-canvas.height = canvasHeight;
-var ctx = canvas.getContext('2d');
-
-function loadLocalImage(e) {
-    // ファイル情報を取得
-    var fileData = e.target.files[0];
-
-    // 画像ファイル以外は処理を止める
-    if(!fileData.type.match('image.*')) {
-        alert('画像を選択してください');
-        return;
+    // IE判定(保存ボタンで使う)
+    if( ua.match(/(msie|MSIE)/) || ua.match(/(T|t)rident/) ) {
+        is_ie = true;
     }
 
-    // FileReaderオブジェクトを使ってファイル読み込み
-    var reader = new FileReader();
-    // ファイル読み込みに成功したときの処理
-    reader.onload = function() {
-        // Canvas上に表示する
-        uploadImgSrc = reader.result;
-        canvasDraw();
+    // canvasのサイズ設定
+    canvas.width = canvas.height = size;
+
+    // ファイルの選択イベント登録
+    $('#file').on('change', fileChange);
+
+    // 画像ファイル選択
+    function fileChange(e) {
+        var data = e.target.files[0],
+            reader = new FileReader();
+
+        if (!data) return;
+
+        // 画像以外を受け付けない
+        if (data.type.indexOf('image') < 0) {
+            alert("画像しか受け付けないよ");
+            return false;
+        }
+
+        // 初期化処理
+        ctx.clearRect(0, 0, size, size);
+        src = ['frame.png'];
+        result.attr('src', '');
+        download.removeClass('on');
+
+        // アップ画像の読み込み後、EXIF取得
+        reader.onload = $.proxy(getExif, data);
+
+        reader.readAsDataURL(data);
     }
-    // ファイル読み込みを実行
-    reader.readAsDataURL(fileData);
-}
 
-// ファイルが指定された時にloadLocalImage()を実行
-file.addEventListener('change', loadLocalImage, false);
+    // EXIFを取得する
+    function getExif(e) {
+        // EXIFで画像の回転を確認
+        EXIF.getData(this, function() {
+            exif_orientation = this.exifdata.Orientation;
 
-// Canvas上に画像を表示する
-function canvasDraw(imgSrc) {
-    // canvas内の要素をクリアする
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            // 横向きになる画像は direction フラグをたてる
+            if (exif_orientation === 6 || exif_orientation === 8) {
+                direction = 1;
+            }
 
-    // Canvas上に画像を表示
-    var img = new Image();
-    img.src = uploadImgSrc;
-    img.onload = function() {
-        ctx.drawImage(img, 0, 0, canvasWidth, this.height * (canvasWidth / this.width));
-
-        // Canvas上にテキストを表示
-        addText();
-
-        // canvasを画像に変換
-        var data = canvas.toDataURL();
-
-        // 画像として出力
-        var outputImg = document.createElement('img');
-        outputImg.src = data;
-        document.getElementById('result').appendChild(outputImg);
-        
-        
-         // Canvas上にテキストを表示
-        addText();
-
-        // canvasを画像に変換
-        var data = canvas.toDataURL();
-
-        // ダウンロードリンクを生成して出力
-        var dlLink = document.createElement('a');
-        dlLink.href = data;
-        dlLink.download = 'sample.png';
-        dlLink.innerText = 'ダウンロード';
-        document.getElementById('result').appendChild(dlLink);
-  
+            // アップ画像の読み込み完了
+            fileLoad(e);
+        });
     }
-}
 
-// Canvas上にテキストを表示する
-function addText() {
-    ctx.fillStyle = '#fdd000';
-    ctx.fillRect(10, 10, 140, 30);
+    // アップ画像の読み込み完了後
+    function fileLoad(e) {
+        src.unshift(e.target.result);
 
-    ctx.font = "bold 20px 'MS Pゴシック'";
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#002B69';
-    ctx.fillText('株式会社TAM', 80, 25
+        // アップ、フレーム画像の読み込み完了で合成画像出力
+        imgSet(src).done(function(data) {
+            // canvasの状態保存
+            ctx.save();
+
+            // canvasを画像の回転に合わせて調整
+            setCtxProp(exif_orientation);
+
+            for (var i = 0, l = data.length; i < l; i++) {
+                var d = data[i];
+
+                // アップ、フレーム画像の順番で描画していく
+                ctx.drawImage(d.img, d.left, d.top, d.width, d.height);
+            }
+
+            // canvasの状態戻す
+            ctx.restore();
+
+            // canvasを画像データに変換して#resultのソースに指定する
+            var result_src = canvas.toDataURL('image/png');
+            result.attr('src', result_src);
+
+            // 保存ボタンのURLを合成画像に合わせる
+            // IE11ではダウンロード属性が使えない
+            download.addClass('on');
+            if (is_ie) {
+                download.off('click').on('click', function(e) {
+                    e.preventDefault();
+
+                    var bin = atob(result_src.split(',')[1]),
+                        buffer = new Uint8Array(bin.length);
+
+                    for (var i = 0; i < bin.length; i++) {
+                        buffer[i] = bin.charCodeAt(i);
+                    }
+
+                    var blob = new Blob([buffer.buffer], { type: 'image/png' });
+                    window.navigator.msSaveBlob(blob, "image.png");
+                });
+            }
+            else {
+                download.attr('href', result_src);
+            }
+        });
+    }
+
+    // 全画像の読み込み、canvasに描画する為の調整
+    function imgSet(src) {
+        var defer = new $.Deferred(),
+            data = [],
+            load = 0;
+
+        for (var i = 0, l = src.length; i < l; i++) {
+            var img = new Image();
+
+            // サイズと位置を調整(中心)してfileLoadに返す
+            img.onload = function(e) {
+                var width = e.target.width,
+                    height = e.target.height,
+                    scale = direction ? height / size : width / size;
+
+                // 横向き画像はcanvasの回転に合わせて、横幅と高さを逆にする
+                if (direction && height > size) {
+                    height = size;
+                    width /= scale;
+                }
+                else if (width > size) {
+                    width = size;
+                    height /= scale;
+                }
+
+                load += 1;
+
+                data[e.target.id] = {
+                    img: e.target,
+                    width: width,
+                    height: height,
+                    left: (size - width) / 2,
+                    top: (size - height) / 2
+                };
+
+                if (load === src.length) defer.resolve(data);
+            };
+
+            img.id = i;
+            img.src = src[i];
+        }
+
+        return defer.promise();
+    }
+
+    // canvasの位置と回転を調整する
+    function setCtxProp(num) {
+        var prop = {
+            1: { angle: 0, move: [0, 0] },
+            6: { angle: 90, move: [1, 0] },
+            3: { angle: 180, move: [1, 1] },
+            8: { angle: 270, move: [0, 1] }
+        };
+
+        prop = prop[num] || prop[1];
+
+        ctx.translate(size * prop.move[0], size * prop.move[1]);
+        ctx.rotate(prop.angle * Math.PI / 180);
+    }
+});
 </script>
+</body>
+
+
+
+
+
+</html>
