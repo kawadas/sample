@@ -26,7 +26,7 @@ Rails.application.configure do
     config.cache_store = :null_store
   end
   
-  config.session_store :redis_store, servers: 'redis://localhost:6379/0', expire_in: 1.minutes
+ 
   
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.delivery_method = :test
