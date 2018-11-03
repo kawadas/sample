@@ -13,7 +13,7 @@ class Micropost < ApplicationRecord
        likes.create(user_id: user.id)
      end
 
-     # マイクロポストのいいねを解除する（ネーミングセンスに対するクレームは受け付けません）
+     # マイクロポストのいいねを解除する
      def uniine(user)
        likes.find_by(user_id: user.id).destroy
      end
