@@ -26,6 +26,8 @@ Rails.application.configure do
     config.cache_store = :null_store
   end
   
+ 
+  
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.delivery_method = :test
   host = 'ca59b2873d6c472f9661947b7e25d9ad.vfs.cloud9.us-east-2.amazonaws.com' # ここをコピペすると失敗します。自分の環境に合わせてください。
